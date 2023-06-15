@@ -94,8 +94,9 @@ class ModelPredictor:
 
 
 class PredictorApi:
-    def __init__(self, predictor: ModelPredictor):
-        self.predictor = predictor
+    def __init__(self, predictor1: ModelPredictor, predictor2: ModelPredictor):
+        self.predictor1 = predictor1
+        self.predictor2 = predictor2
         self.app = FastAPI()
 
         @self.app.get("/")
@@ -105,16 +106,16 @@ class PredictorApi:
         @self.app.post("/phase-1/prob-1/predict")
         async def predict(data: Data, request: Request):
             self._log_request(request)
-            self.predictor.request_queue.put(data)  # Đưa yêu cầu vào hàng đợi
-            response = self.predictor.predict(data)
+            self.predictor1.request_queue.put(data)  # Đưa yêu cầu vào hàng đợi
+            response = self.predictor1.predict(data)
             self._log_response(response)
             return response
 
         @self.app.post("/phase-1/prob-2/predict")
         async def predict(data: Data, request: Request):
             self._log_request(request)
-            self.predictor.request_queue.put(data)  # Đưa yêu cầu vào hàng đợi
-            response = self.predictor.predict(data)
+            self.predictor2.request_queue.put(data)  # Đưa yêu cầu vào hàng đợi
+            response = self.predictor2.predict(data)
             self._log_response(response)
             return response
 
@@ -139,14 +140,17 @@ if __name__ == "__main__":
     ).as_posix()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config-path", type=str, default=default_config_path)
+    parser.add_argument("--model1-config-path", type=str, default=default_config_path)
+    parser.add_argument('--model2-config-path', type=str, default=default_config_path)
     parser.add_argument("--port", type=int, default=PREDICTOR_API_PORT)
     args = parser.parse_args()
 
     request_queue = queue.Queue()  # Tạo hàng đợi yêu cầu
 
-    predictor = ModelPredictor(config_file_path=args.config_path, request_queue=request_queue)
-    api = PredictorApi(predictor)
+    predictor1 = ModelPredictor(config_file_path=args.model1_config_path, request_queue=request_queue)
+    predictor2 = ModelPredictor(config_file_path=args.model2_config_path, request_queue=request_queue)
+
+    api = PredictorApi(predictor1, predictor2)
 
     def process_requests():
         while True:

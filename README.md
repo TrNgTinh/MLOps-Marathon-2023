@@ -73,11 +73,14 @@ This repository is the sample solution for MLOps Marathon 2023.
         # run model predictor
         export MLFLOW_TRACKING_URI=http://localhost:5000
         python src/model_predictor.py --config-path data/model_config/phase-1/prob-1/model-1.yaml --port 8000
+        python src/model_predictor.py --config-path data/model_config/phase-1/prob-2/model-1.yaml --port 8000
 
         # curl in another terminal
         curl -X POST http://172.17.195.7:8000/phase-1/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-1/payload-1.json
 
-        curl -X POST http://172.17.195.7:5040/phase-1/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-1/payload-1.json
+        curl -X POST http://172.17.195.7:5040/phase-1/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-1/payload-1.json
+
+        curl -X POST http://172.17.195.7:8000/phase-1/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-2/test.json
 
         # stop the predictor above
         ```
