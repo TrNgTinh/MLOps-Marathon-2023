@@ -1,3 +1,4 @@
+import queue
 import argparse
 import logging
 import os
@@ -11,6 +12,7 @@ import yaml
 from fastapi import FastAPI, Request
 from pandas.util import hash_pandas_object
 from pydantic import BaseModel
+from threading import Thread
 
 from problem_config import ProblemConst, create_prob_config
 from raw_data_processor import RawDataProcessor
@@ -26,7 +28,7 @@ class Data(BaseModel):
 
 
 class ModelPredictor:
-    def __init__(self, config_file_path):
+    def __init__(self, config_file_path, request_queue):
         with open(config_file_path, "r") as f:
             self.config = yaml.safe_load(f)
         logging.info(f"model-config: {self.config}")
@@ -45,6 +47,9 @@ class ModelPredictor:
             "models:/", self.config["model_name"], str(self.config["model_version"])
         )
         self.model = mlflow.pyfunc.load_model(model_uri)
+
+        # Initialize request queue
+        self.request_queue = request_queue
 
     def detect_drift(self, feature_df) -> int:
         # watch drift between coming requests and training data
@@ -100,6 +105,15 @@ class PredictorApi:
         @self.app.post("/phase-1/prob-1/predict")
         async def predict(data: Data, request: Request):
             self._log_request(request)
+            self.predictor.request_queue.put(data)  # Đưa yêu cầu vào hàng đợi
+            response = self.predictor.predict(data)
+            self._log_response(response)
+            return response
+
+        @self.app.post("/phase-1/prob-2/predict")
+        async def predict(data: Data, request: Request):
+            self._log_request(request)
+            self.predictor.request_queue.put(data)  # Đưa yêu cầu vào hàng đợi
             response = self.predictor.predict(data)
             self._log_response(response)
             return response
@@ -129,6 +143,19 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=PREDICTOR_API_PORT)
     args = parser.parse_args()
 
-    predictor = ModelPredictor(config_file_path=args.config_path)
+    request_queue = queue.Queue()  # Tạo hàng đợi yêu cầu
+
+    predictor = ModelPredictor(config_file_path=args.config_path, request_queue=request_queue)
     api = PredictorApi(predictor)
+
+    def process_requests():
+        while True:
+            data = request_queue.get()  # Lấy yêu cầu từ hàng đợi
+            predictor.predict(data)  # Xử lí yêu cầu
+            request_queue.task_done()  # Đánh dấu yêu cầu đã được xử lí
+
+    # Tạo luồng xử lý yêu cầu
+    worker_thread = Thread(target=process_requests)
+    worker_thread.start()
+
     api.run(port=args.port)

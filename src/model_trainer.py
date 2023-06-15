@@ -27,7 +27,6 @@ class ModelTrainer:
         mlflow.set_experiment(
             f"{prob_config.phase_id}_{prob_config.prob_id}_{ModelTrainer.EXPERIMENT_NAME}"
         )
-
         # load train data
         train_x, train_y = RawDataProcessor.load_train_data(prob_config)
         train_x = train_x.to_numpy()
