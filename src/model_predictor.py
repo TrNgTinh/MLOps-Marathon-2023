@@ -17,6 +17,7 @@ from threading import Thread
 from problem_config import ProblemConst, create_prob_config
 from raw_data_processor import RawDataProcessor
 from utils import AppConfig, AppPath
+import numpy as np
 
 PREDICTOR_API_PORT = 8000
 
@@ -28,7 +29,7 @@ class Data(BaseModel):
 
 
 class ModelPredictor:
-    def __init__(self, config_file_path, request_queue):
+    def __init__(self, config_file_path):
         with open(config_file_path, "r") as f:
             self.config = yaml.safe_load(f)
         logging.info(f"model-config: {self.config}")
@@ -47,9 +48,6 @@ class ModelPredictor:
             "models:/", self.config["model_name"], str(self.config["model_version"])
         )
         self.model = mlflow.pyfunc.load_model(model_uri)
-
-        # Initialize request queue
-        self.request_queue = request_queue
 
     def detect_drift(self, feature_df) -> int:
         # watch drift between coming requests and training data
@@ -72,6 +70,33 @@ class ModelPredictor:
         )
 
         prediction = self.model.predict(feature_df)
+        is_drifted = self.detect_drift(feature_df)
+
+        run_time = round((time.time() - start_time) * 1000, 0)
+        logging.info(f"prediction takes {run_time} ms")
+        return {
+            "id": data.id,
+            "predictions": prediction.tolist(),
+            "drift": is_drifted,
+        }
+
+
+    def predict_test(self, data: Data):
+        start_time = time.time()
+
+        # preprocess
+        raw_df = pd.DataFrame(data.rows, columns=data.columns)
+        feature_df = RawDataProcessor.apply_category_features(
+            raw_df=raw_df,
+            categorical_cols=self.prob_config.categorical_cols,
+            category_index=self.category_index,
+        )
+        # save request data for improving models
+        ModelPredictor.save_request_data(
+            feature_df, self.prob_config.captured_data_dir, data.id
+        )
+        #prediction = self.model.predict(feature_df)
+        prediction = np.ones(feature_df.shape[0], dtype= np.int8)
         is_drifted = self.detect_drift(feature_df)
 
         run_time = round((time.time() - start_time) * 1000, 0)
@@ -106,17 +131,17 @@ class PredictorApi:
         @self.app.post("/phase-1/prob-1/predict")
         async def predict(data: Data, request: Request):
             self._log_request(request)
-            self.predictor1.request_queue.put(data)  # Đưa yêu cầu vào hàng đợi
-            response = self.predictor1.predict(data)
+            response = self.predictor1.predict_test(data)
             self._log_response(response)
+            logging.info(response)
             return response
 
         @self.app.post("/phase-1/prob-2/predict")
         async def predict(data: Data, request: Request):
             self._log_request(request)
-            self.predictor2.request_queue.put(data)  # Đưa yêu cầu vào hàng đợi
             response = self.predictor2.predict(data)
             self._log_response(response)
+            logging.info(response)
             return response
 
     @staticmethod
@@ -132,34 +157,33 @@ class PredictorApi:
 
 
 if __name__ == "__main__":
-    default_config_path = (
+    
+    default_config_1_path = (
         AppPath.MODEL_CONFIG_DIR
         / ProblemConst.PHASE1
         / ProblemConst.PROB1
         / "model-1.yaml"
     ).as_posix()
 
+    default_config_2_path = (
+        AppPath.MODEL_CONFIG_DIR
+        / ProblemConst.PHASE1
+        / ProblemConst.PROB2
+        / "model-1.yaml"
+    ).as_posix()
+
+    print("default_config_1_path", default_config_1_path)
+    print("default_config_2_path", default_config_2_path)
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model1-config-path", type=str, default=default_config_path)
-    parser.add_argument('--model2-config-path', type=str, default=default_config_path)
+    parser.add_argument("--model1-config-path", type=str, default=default_config_1_path)
+    parser.add_argument('--model2-config-path', type=str, default=default_config_2_path)
     parser.add_argument("--port", type=int, default=PREDICTOR_API_PORT)
     args = parser.parse_args()
 
-    request_queue = queue.Queue()  # Tạo hàng đợi yêu cầu
-
-    predictor1 = ModelPredictor(config_file_path=args.model1_config_path, request_queue=request_queue)
-    predictor2 = ModelPredictor(config_file_path=args.model2_config_path, request_queue=request_queue)
+    predictor1 = ModelPredictor(config_file_path=args.model1_config_path)
+    predictor2 = ModelPredictor(config_file_path=args.model2_config_path)
 
     api = PredictorApi(predictor1, predictor2)
-
-    def process_requests():
-        while True:
-            data = request_queue.get()  # Lấy yêu cầu từ hàng đợi
-            predictor.predict(data)  # Xử lí yêu cầu
-            request_queue.task_done()  # Đánh dấu yêu cầu đã được xử lí
-
-    # Tạo luồng xử lý yêu cầu
-    worker_thread = Thread(target=process_requests)
-    worker_thread.start()
 
     api.run(port=args.port)
