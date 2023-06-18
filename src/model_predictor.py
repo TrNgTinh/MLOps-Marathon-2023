@@ -131,7 +131,7 @@ class PredictorApi:
         @self.app.post("/phase-1/prob-1/predict")
         async def predict(data: Data, request: Request):
             self._log_request(request)
-            response = self.predictor1.predict_test(data)
+            response = self.predictor1.predict(data)
             self._log_response(response)
             logging.info(response)
             return response
