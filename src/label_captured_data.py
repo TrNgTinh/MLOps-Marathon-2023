@@ -4,19 +4,22 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import MiniBatchKMeans
 from problem_config import ProblemConfig, ProblemConst, get_prob_config
+from sklearn.impute import SimpleImputer
 
 
 def label_captured_data(prob_config: ProblemConfig):
     train_x = pd.read_parquet(prob_config.train_x_path).to_numpy()
     train_y = pd.read_parquet(prob_config.train_y_path).to_numpy()
     ml_type = prob_config.ml_type
-
+    
     logging.info("Load captured data")
     captured_x = pd.DataFrame()
     for file_path in prob_config.captured_data_dir.glob("*.parquet"):
         captured_data = pd.read_parquet(file_path)
         captured_x = pd.concat([captured_x, captured_data])
-
+        
+    captured_x = captured_x.dropna()
+    
     np_captured_x = captured_x.to_numpy()
     n_captured = len(np_captured_x)
     n_samples = len(train_x) + n_captured
@@ -24,17 +27,23 @@ def label_captured_data(prob_config: ProblemConfig):
 
     logging.info("Initialize and fit the clustering model")
     n_cluster = int(n_samples / 10) * len(np.unique(train_y))
+    print("n_cluster", n_cluster)
+    #n_cluster = 16
     kmeans_model = MiniBatchKMeans(
-        n_clusters=n_cluster, random_state=prob_config.random_state
+        n_clusters = n_cluster, max_iter = 10000000000, verbose=1 ,random_state=prob_config.random_state, max_no_improvement = 10
     ).fit(train_x)
 
     logging.info("Predict the cluster assignments for the new data")
+    
+    num_features = train_x.shape[1]
+    
+    np_captured_x = np_captured_x[:,:num_features]
     kmeans_clusters = kmeans_model.predict(np_captured_x)
-
     logging.info(
         "Assign new labels to the new data based on the labels of the original data in each cluster"
     )
     new_labels = []
+    
     for i in range(n_cluster):
         mask = kmeans_model.labels_ == i  # mask for data points in cluster i
         cluster_labels = train_y[mask]  # labels of data points in cluster i
@@ -50,10 +59,10 @@ def label_captured_data(prob_config: ProblemConfig):
                 new_labels.append(
                     np.bincount(cluster_labels.flatten().astype(int)).argmax()
                 )
-
     approx_label = [new_labels[c] for c in kmeans_clusters]
     approx_label_df = pd.DataFrame(approx_label, columns=[prob_config.target_col])
-
+    
+    print(approx_label_df['label'].value_counts())
     captured_x.to_parquet(prob_config.captured_x_path, index=False)
     approx_label_df.to_parquet(prob_config.uncertain_y_path, index=False)
 
