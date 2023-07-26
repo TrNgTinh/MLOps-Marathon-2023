@@ -1,0 +1,44 @@
+artifact_path: model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.9.16
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.2.2
+mlflow_version: 2.3.0
+model_uuid: fdd37718abef4d3f953b98f4d496bebb
+run_id: 8f6e11f283264ecda35e5c641b26763e
+signature:
+  inputs: '[{"name": "feature1", "type": "double"}, {"name": "feature2", "type": "long"},
+    {"name": "feature3", "type": "long"}, {"name": "feature5", "type": "double"},
+    {"name": "feature6", "type": "double"}, {"name": "feature7", "type": "double"},
+    {"name": "feature8", "type": "double"}, {"name": "feature9", "type": "double"},
+    {"name": "feature10", "type": "double"}, {"name": "feature11", "type": "double"},
+    {"name": "feature12", "type": "double"}, {"name": "feature13", "type": "double"},
+    {"name": "feature14", "type": "double"}, {"name": "feature15", "type": "double"},
+    {"name": "feature16", "type": "double"}, {"name": "feature17", "type": "double"},
+    {"name": "feature18", "type": "double"}, {"name": "feature19", "type": "double"},
+    {"name": "feature20", "type": "double"}, {"name": "feature21", "type": "double"},
+    {"name": "feature22", "type": "double"}, {"name": "feature23", "type": "double"},
+    {"name": "feature24", "type": "double"}, {"name": "feature25", "type": "double"},
+    {"name": "feature26", "type": "double"}, {"name": "feature27", "type": "double"},
+    {"name": "feature28", "type": "double"}, {"name": "feature29", "type": "double"},
+    {"name": "feature30", "type": "double"}, {"name": "feature31", "type": "double"},
+    {"name": "feature32", "type": "double"}, {"name": "feature33", "type": "double"},
+    {"name": "feature34", "type": "double"}, {"name": "feature35", "type": "double"},
+    {"name": "feature36", "type": "double"}, {"name": "feature37", "type": "double"},
+    {"name": "feature38", "type": "double"}, {"name": "feature39", "type": "double"},
+    {"name": "feature40", "type": "double"}, {"name": "feature41", "type": "double"},
+    {"name": "feature4_0", "type": "double"}, {"name": "feature4_1", "type": "double"},
+    {"name": "feature4_2", "type": "double"}, {"name": "feature4_3", "type": "double"},
+    {"name": "feature4_4", "type": "double"}, {"name": "feature4_5", "type": "double"}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+utc_time_created: '2023-07-24 19:19:22.855130'

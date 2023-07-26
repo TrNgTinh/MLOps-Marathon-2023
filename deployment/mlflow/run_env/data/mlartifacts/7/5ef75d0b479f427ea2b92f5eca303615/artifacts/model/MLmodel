@@ -1,0 +1,33 @@
+artifact_path: model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.9.16
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.2.2
+mlflow_version: 2.3.0
+model_uuid: 5c3fc4aed78d437892b46fca2df5f118
+run_id: 5ef75d0b479f427ea2b92f5eca303615
+signature:
+  inputs: '[{"name": "feature1", "type": "double"}, {"name": "feature3", "type": "long"},
+    {"name": "feature7", "type": "double"}, {"name": "feature8", "type": "double"},
+    {"name": "feature9", "type": "double"}, {"name": "feature10", "type": "double"},
+    {"name": "feature11", "type": "double"}, {"name": "feature12", "type": "double"},
+    {"name": "feature15", "type": "double"}, {"name": "feature16", "type": "double"},
+    {"name": "feature17", "type": "double"}, {"name": "feature18", "type": "double"},
+    {"name": "feature20", "type": "double"}, {"name": "feature23", "type": "double"},
+    {"name": "feature24", "type": "double"}, {"name": "feature25", "type": "double"},
+    {"name": "feature26", "type": "double"}, {"name": "feature27", "type": "double"},
+    {"name": "feature30", "type": "double"}, {"name": "feature31", "type": "double"},
+    {"name": "feature34", "type": "double"}, {"name": "feature35", "type": "double"},
+    {"name": "feature40", "type": "double"}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+utc_time_created: '2023-07-24 21:37:29.832291'
