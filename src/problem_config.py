@@ -3,7 +3,7 @@ from utils import AppPath
 
 
 class ProblemConst:
-    PHASE1 = "phase-1"
+    PHASE2 = "phase-2"
     PROB1 = "prob-1"
     PROB2 = "prob-2"
 
@@ -38,6 +38,12 @@ class ProblemConfig:
     captured_x_path: str
     uncertain_y_path: str
 
+    # new
+    label_encoder: str
+    selected_features: str
+    score_model: str
+
+
 
 def load_feature_configs_dict(config_path: str) -> dict:
     with open(config_path) as f:
@@ -65,10 +71,28 @@ def create_prob_config(phase_id: str, prob_id: str) -> ProblemConfig:
     prob_config.category_index_path = (
         prob_config.train_data_path / "category_index.pickle"
     )
+
+    prob_config.selected_features = (
+        prob_config.train_data_path / "selected_features.pickle"
+    )
+
+    prob_config.score_model = (
+        prob_config.train_data_path / "score.txt"
+    )
+
+    prob_config.label_encoder = (
+        prob_config.train_data_path
+    )
+
     prob_config.train_x_path = prob_config.train_data_path / "train_x.parquet"
     prob_config.train_y_path = prob_config.train_data_path / "train_y.parquet"
     prob_config.test_x_path = prob_config.train_data_path / "test_x.parquet"
     prob_config.test_y_path = prob_config.train_data_path / "test_y.parquet"
+
+    #full data
+    prob_config.full_x_path = prob_config.train_data_path / "full_x.parquet"
+    prob_config.full_y_path = prob_config.train_data_path / "full_y.parquet"
+
 
     # get properties of ml-problem
     feature_configs = load_feature_configs_dict(prob_config.feature_config_path)

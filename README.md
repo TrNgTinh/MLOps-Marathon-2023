@@ -21,16 +21,21 @@ This repository is the sample solution for MLOps Marathon 2023.
         ```bash
         data/raw_data
         ├── .gitkeep
-        └── phase-1
+        └── phase-2
             └── prob-1
                 ├── features_config.json
                 └── raw_train.parquet
         ```
 
+    -   Static data  
+        ```bash
+        python src/static_data.py --phase-id phase-2 --prob-id prob-1
+        ```
+    
     -   Process data
 
         ```bash
-        python src/raw_data_processor.py --phase-id phase-1 --prob-id prob-1
+        python src/raw_data_processor.py --phase-id phase-2 --prob-id prob-1
         ```
 
     -   After processing data, `./data/train_data` dir should look like
@@ -38,7 +43,7 @@ This repository is the sample solution for MLOps Marathon 2023.
         ```bash
         data/train_data
         ├── .gitkeep
-        └── phase-1
+        └── phase-2
             └── prob-1
                 ├── category_index.pickle
                 ├── test_x.parquet
@@ -51,7 +56,7 @@ This repository is the sample solution for MLOps Marathon 2023.
 
         ```bash
         export MLFLOW_TRACKING_URI=http://localhost:5000
-        python src/model_trainer.py --phase-id phase-1 --prob-id prob-1
+        python src/model_trainer.py --phase-id phase-2 --prob-id prob-1
         ```
 
     -   Register model: Go to mlflow UI at <http://localhost:5000> and register a new model named **phase-1_prob-1_model-1**
@@ -87,7 +92,9 @@ This repository is the sample solution for MLOps Marathon 2023.
 
         curl -X POST http://ec2-13-250-39-138.ap-southeast-1.compute.amazonaws.com:5040/phase-1/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-1/payload-1.json
 
-        curl -X POST http://ec2-13-250-39-138.ap-southeast-1.compute.amazonaws.com:5040/phase-1/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-2/payload-1.json
+        curl -X POST http://ec2-54-169-18-28.ap-southeast-1.compute.amazonaws.com:5040/phase-1/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-2/payload-1.json
+
+        
 
 
         # stop the predictor above

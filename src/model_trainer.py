@@ -17,7 +17,7 @@ from utils import AppConfig
 
 
 class ModelTrainer:
-    EXPERIMENT_NAME = "xgb-1"
+    EXPERIMENT_NAME = "Phase2"
 
     @staticmethod
     def train_model(prob_config: ProblemConfig, model_params, add_captured_data=False):
@@ -35,7 +35,9 @@ class ModelTrainer:
 
         if add_captured_data:
             captured_x, captured_y = RawDataProcessor.load_capture_data(prob_config)
+            num_features = train_x.shape[1]
             captured_x = captured_x.to_numpy()
+            captured_x = captured_x[:, :num_features]
             captured_y = captured_y.to_numpy()
             train_x = np.concatenate((train_x, captured_x))
             train_y = np.concatenate((train_y, captured_y))
@@ -46,15 +48,27 @@ class ModelTrainer:
             objective = "binary:logistic"
         else:
             objective = "multi:softprob"
-        model = xgb.XGBClassifier(objective=objective, **model_params)
+        model = xgb.XGBClassifier(objective=objective, **model_params, verbosity=2)
+
+        mlflow.log_metric("train_data_rows", train_x.shape[0])
+
         model.fit(train_x, train_y)
 
         # evaluate
         test_x, test_y = RawDataProcessor.load_test_data(prob_config)
-        predictions = model.predict(test_x)
-        auc_score = roc_auc_score(test_y, predictions)
+        mlflow.log_metric("test_data_rows", test_x.shape[0])
+        if len(np.unique(train_y)) == 2:
+            predictions = model.predict(test_x)
+        else:
+            predictions = model.predict_proba(test_x)
+
+
+        # Chuyển đổi dự đoán thành mảng 1D nếu cần thiết
+        #predictions = predictions.ravel()
+        auc_score = roc_auc_score(test_y, predictions, multi_class='ovr')
         metrics = {"test_auc": auc_score}
         logging.info(f"metrics: {metrics}")
+    
 
         # mlflow log
         mlflow.log_params(model.get_params())
@@ -71,7 +85,7 @@ class ModelTrainer:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--phase-id", type=str, default=ProblemConst.PHASE1)
+    parser.add_argument("--phase-id", type=str, default=ProblemConst.PHASE2)
     parser.add_argument("--prob-id", type=str, default=ProblemConst.PROB1)
     parser.add_argument(
         "--add-captured-data", type=lambda x: (str(x).lower() == "true"), default=False
