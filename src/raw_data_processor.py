@@ -3,6 +3,7 @@ import logging
 import pickle
 from pickle import dump
 import numpy as np
+import os
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -20,6 +21,11 @@ class LabelEncoderExt(LabelEncoder):
         new_data = np.where(np.isin(data, self.classes_), data, 'Unknown')
         return super().transform(new_data)
 
+def load_model(model_path):
+    with open(model_path, 'rb') as file:
+        model = pickle.load(file)
+    return model
+    
 class RawDataProcessor:
 
     @staticmethod
@@ -39,6 +45,7 @@ class RawDataProcessor:
                 le = load_label_encoder(prob_config.label_encoder / name_file_save)
                 df[col] = le.fit_transform(df[col])    
             else:
+                print(col)
                 name_file_save = "OH_" + str(col) + ".pkl"
                 onehot_encoder = load_label_encoder(prob_config.label_encoder / name_file_save)
                 encoded_col = onehot_encoder.transform(df[[col]])
@@ -46,6 +53,34 @@ class RawDataProcessor:
                 df_encoded = pd.DataFrame(encoded_col, columns=col_names)
                 df = pd.concat([df, df_encoded], axis=1)   
                 df.drop(columns=[col], inplace=True)
+        return df
+
+    @staticmethod
+    def load_models_from_folder(prob_config):
+        model_dict = {}
+        for filename in os.listdir(prob_config.label_encoder):
+            if filename.endswith(".pkl"):
+                col_name = filename[:-4]  # Remove the '.pkl' extension
+                model_path = os.path.join(prob_config.label_encoder, filename)
+                model = load_label_encoder(model_path)
+                model_dict[col_name] = model
+        return model_dict
+
+    @staticmethod
+    def preprocess_categorical_columns(df, model_dict):
+        for col, model in model_dict.items():
+            if col.startswith("LE_"):
+                col_name = col[3:]  # Remove the 'LE_' prefix
+                if col_name in df.columns:
+                    df[col_name] = model.transform(df[col_name])
+            elif col.startswith("OH_"):
+                col_name = col[3:]  # Remove the 'OH_' prefix
+                if col_name in df.columns:
+                    encoded_col = model.transform(df[[col_name]])
+                    col_names = [col_name + '_' + str(i) for i in range(encoded_col.shape[1])]
+                    df_encoded = pd.DataFrame(encoded_col, columns=col_names)
+                    df = pd.concat([df, df_encoded], axis=1)
+                    df.drop(columns=[col_name], inplace=True)
         return df
 
     @staticmethod

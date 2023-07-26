@@ -59,16 +59,16 @@ This repository is the sample solution for MLOps Marathon 2023.
         python src/model_trainer.py --phase-id phase-2 --prob-id prob-1
         ```
 
-    -   Register model: Go to mlflow UI at <http://localhost:5000> and register a new model named **phase-1_prob-1_model-1**
+    -   Register model: Go to mlflow UI at <http://localhost:5000> and register a new model named **phase-2_prob-1_model-1**
 
 3.  Deploy model predictor
 
-    -   Create model config at `data/model_config/phase-1/prob-1/model-1.yaml` with content:
+    -   Create model config at `data/model_config/phase-2/prob-1/model-1.yaml` with content:
 
         ```yaml
-        phase_id: "phase-1"
+        phase_id: "phase-2"
         prob_id: "prob-1"
-        model_name: "phase-1_prob-1_model-1"
+        model_name: "phase-2_prob-1_model-1"
         model_version: "1"
         ```
 
@@ -78,21 +78,21 @@ This repository is the sample solution for MLOps Marathon 2023.
         # run model predictor
         export MLFLOW_TRACKING_URI=http://localhost:5000
 
-        python src/model_predictor.py --model1-config-path data/model_config/phase-1/prob-1/model-1.yaml --model2-config-path data/model_config/phase-1/prob-2/model-1.yaml --port 8000
+        python src/model_predictor.py --model1-config-path data/model_config/phase-2/prob-1/model-1.yaml --model2-config-path data/model_config/phase-2/prob-2/model-1.yaml --port 8000
 
-        ##python src/model_predictor.py --config-path data/model_config/phase-1/prob-1/model-1.yaml --port 8000
-        ##python src/model_predictor.py --config-path data/model_config/phase-1/prob-2/model-1.yaml --port 8000
+        ##python src/model_predictor.py --config-path data/model_config/phase-2/prob-1/model-1.yaml --port 8000
+        ##python src/model_predictor.py --config-path data/model_config/phase-2/prob-2/model-1.yaml --port 8000
 
         # curl in another terminal
-        curl -X POST http://localhost:8000/phase-1/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-1/payload-1.json
+        curl -X POST http://localhost:8000/phase-2/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-2/prob-1/payload-1.json
 
-        curl -X POST http://localhost:8000/phase-1/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-2/payload-1.json
+        curl -X POST http://localhost:8000/phase-2/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-2/prob-2/payload-1.json
 
         # curl in another machine to aws server
 
-        curl -X POST http://ec2-13-250-39-138.ap-southeast-1.compute.amazonaws.com:5040/phase-1/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-1/payload-1.json
+        curl -X POST http://ec2-13-250-39-138.ap-southeast-1.compute.amazonaws.com:5040/phase-2/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-2/prob-1/payload-1.json
 
-        curl -X POST http://ec2-54-169-18-28.ap-southeast-1.compute.amazonaws.com:5040/phase-1/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-1/prob-2/payload-1.json
+        curl -X POST http://ec2-54-169-18-28.ap-southeast-1.compute.amazonaws.com:5040/phase-2/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-2/prob-2/payload-1.json
 
         
 
@@ -112,7 +112,7 @@ This repository is the sample solution for MLOps Marathon 2023.
         ```bash
          data/captured_data
          ├── .gitkeep 
-         └── phase-1
+         └── phase-2
              └── prob-1
                  ├── 123.parquet
                  └── 456.parquet
@@ -124,7 +124,7 @@ This repository is the sample solution for MLOps Marathon 2023.
     -   Label the captured data, taking around 3 minutes
 
         ```bash
-        python src/label_captured_data.py --phase-id phase-1 --prob-id prob-1
+        python src/label_captured_data.py --phase-id phase-2 --prob-id prob-1
         ```
 
     -   After label the captured data, `./data/captured_data` dir should look like:
@@ -132,7 +132,7 @@ This repository is the sample solution for MLOps Marathon 2023.
         ```bash
         data/captured_data
         ├── .gitkeep
-        └── phase-1
+        └── phase-2
             └── prob-1
                 ├── 123.parquet
                 ├── 456.parquet
@@ -145,17 +145,17 @@ This repository is the sample solution for MLOps Marathon 2023.
 
         ```bash
         export MLFLOW_TRACKING_URI=http://localhost:5000
-        python src/model_trainer.py --phase-id phase-1 --prob-id prob-1 --add-captured-data true
+        python src/model_trainer.py --phase-id phase-2 --prob-id prob-1 --add-captured-data true
         ```
 
-    -   Register model: Go to mlflow UI at <http://localhost:5000> and register model using the existing name **phase-1_prob-1_model-1**. The latest model version now should be `2`.
+    -   Register model: Go to mlflow UI at <http://localhost:5000> and register model using the existing name **phase-2_prob-1_model-1**. The latest model version now should be `2`.
 
-    -   Update model config at `data/model_config/phase-1/prob-1/model-1.yaml` to:
+    -   Update model config at `data/model_config/phase-2/prob-1/model-1.yaml` to:
 
         ```yaml
-        phase_id: "phase-1"
+        phase_id: "phase-2"
         prob_id: "prob-1"
-        model_name: "phase-1_prob-1_model-1"
+        model_name: "phase-2_prob-1_model-1"
         model_version: "2"
         ```
 

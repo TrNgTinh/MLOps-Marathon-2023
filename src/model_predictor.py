@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from threading import Thread
 
 from problem_config import ProblemConst, create_prob_config
-from raw_data_processor import RawDataProcessor
+from raw_data_processor import RawDataProcessor, LabelEncoderExt
 from utils import AppConfig, AppPath
 import numpy as np
 
@@ -41,8 +41,12 @@ class ModelPredictor:
         )
 
         # load category_index
-        self.category_index = RawDataProcessor.load_category_index(self.prob_config)
+        #self.category_index = RawDataProcessor.load_category_index(self.prob_config)
 
+        self.model_category = RawDataProcessor.load_models_from_folder(self.prob_config)
+        
+        self.selected_features = RawDataProcessor.load_selected_features(self.prob_config)
+        
         # load model
         model_uri = os.path.join(
             "models:/", self.config["model_name"], str(self.config["model_version"])
@@ -56,21 +60,33 @@ class ModelPredictor:
 
     def predict(self, data: Data):
         start_time = time.time()
-
         # preprocess
         raw_df = pd.DataFrame(data.rows, columns=data.columns)
-        feature_df = RawDataProcessor.apply_category_features(
-            raw_df=raw_df,
-            categorical_cols=self.prob_config.categorical_cols,
-            category_index=self.category_index,
-        )
+
+        #feature_df = RawDataProcessor.apply_category_features(
+        #    raw_df=raw_df,
+        #    categorical_cols=self.prob_config.categorical_cols,
+        #    category_index=self.category_index,
+        #)
+
+
         # save request data for improving models
         ModelPredictor.save_request_data(
-            feature_df, self.prob_config.captured_data_dir, data.id
+            raw_df, self.prob_config.captured_data_dir, data.id
         )
 
+        feature_df = RawDataProcessor.preprocess_categorical_columns(
+            df=raw_df,
+            model_dict = self.model_category
+        )
+
+        feature_df = feature_df.loc[:, self.selected_features]  
+
         prediction = self.model.predict(feature_df)
-        is_drifted = self.detect_drift(feature_df)
+
+        
+        #is_drifted = self.detect_drift(feature_df)
+        is_drifted = 0
 
         run_time = round((time.time() - start_time) * 1000, 0)
         logging.info(f"prediction takes {run_time} ms")
@@ -128,7 +144,7 @@ class PredictorApi:
         async def root():
             return {"message": "hello"}
 
-        @self.app.post("/phase-1/prob-1/predict")
+        @self.app.post("/phase-2/prob-1/predict")
         async def predict(data: Data, request: Request):
             self._log_request(request)
             response = self.predictor1.predict(data)
@@ -136,7 +152,7 @@ class PredictorApi:
             logging.info(response)
             return response
 
-        @self.app.post("/phase-1/prob-2/predict")
+        @self.app.post("/phase-2/prob-2/predict")
         async def predict(data: Data, request: Request):
             self._log_request(request)
             response = self.predictor2.predict(data)
@@ -160,14 +176,14 @@ if __name__ == "__main__":
     
     default_config_1_path = (
         AppPath.MODEL_CONFIG_DIR
-        / ProblemConst.PHASE1
+        / ProblemConst.PHASE2
         / ProblemConst.PROB1
         / "model-1.yaml"
     ).as_posix()
 
     default_config_2_path = (
         AppPath.MODEL_CONFIG_DIR
-        / ProblemConst.PHASE1
+        / ProblemConst.PHASE2
         / ProblemConst.PROB2
         / "model-1.yaml"
     ).as_posix()

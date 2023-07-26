@@ -102,7 +102,7 @@ class StaticRawData:
         # Encode the selected columns
         for col in df_x.select_dtypes("object"):
             # Encoder For Cat Data
-            if df_x[col].value_counts().ne(1).sum() > 10:
+            if df_x[col].value_counts().ne(1).sum() >= 10:
                 le = LabelEncoderExt()
                 df_x[col] = le.fit_transform(df_x[col])
                 #save model
