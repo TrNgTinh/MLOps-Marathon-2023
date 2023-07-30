@@ -63,13 +63,6 @@ class ModelPredictor:
         # preprocess
         raw_df = pd.DataFrame(data.rows, columns=data.columns)
 
-        #feature_df = RawDataProcessor.apply_category_features(
-        #    raw_df=raw_df,
-        #    categorical_cols=self.prob_config.categorical_cols,
-        #    category_index=self.category_index,
-        #)
-
-
         # save request data for improving models
         ModelPredictor.save_request_data(
             raw_df, self.prob_config.captured_data_dir, data.id

@@ -88,6 +88,9 @@ This repository is the sample solution for MLOps Marathon 2023.
 
         curl -X POST http://localhost:8000/phase-2/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-2/prob-2/payload-1.json
 
+        curl -X POST http://localhost:5040/phase-2/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-2/prob-2/payload-1.json
+
+
         # curl in another machine to aws server
 
         curl -X POST http://ec2-13-250-39-138.ap-southeast-1.compute.amazonaws.com:5040/phase-2/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-2/prob-1/payload-1.json

@@ -2,6 +2,7 @@ import argparse
 import logging
 import pickle
 import os
+from collections import Counter
 from utils import save_label_encoder, load_label_encoder
 
 from problem_config import ProblemConfig, ProblemConst, get_prob_config
@@ -26,11 +27,16 @@ np.random.seed(SEED)  # Set the seed for numpy
 
 class LabelEncoderExt(LabelEncoder):
     def fit(self, data):
-        self.classes_ = np.append(np.unique(data), 'Unknown')
+        self.classes_ = np.unique(data)
+        # Lưu giữ giá trị xuất hiện nhiều nhất trong tập huấn luyện
+        label_counts = Counter(self.classes_)
+        self.most_common_label = label_counts.most_common(1)[0][0]
+        print("self.most_common_label", self.most_common_label)
         return self
 
     def transform(self, data):
-        new_data = np.where(np.isin(data, self.classes_), data, 'Unknown')
+        # Gán nhãn mới không có trong tập lớp đã khớp thành giá trị mode
+        new_data = np.where(np.isin(data, self.classes_), data, self.most_common_label)
         return super().transform(new_data)
 
 
@@ -104,6 +110,7 @@ class StaticRawData:
             # Encoder For Cat Data
             if df_x[col].value_counts().ne(1).sum() >= 10:
                 le = LabelEncoderExt()
+                le.fit(df_x[col])
                 df_x[col] = le.fit_transform(df_x[col])
                 #save model
                 name_file_save = "LE_" + str(col) + ".pkl"
@@ -120,39 +127,39 @@ class StaticRawData:
                 name_file_save = "OH_" + str(col) + ".pkl"
                 save_label_encoder(onehot_encoder, prob_config.label_encoder / name_file_save )
                 
-        #print("df_x.isna().sum().sum()", df_x.isna().sum())
-        print(df_x.shape)
-        scaler = StandardScaler()
-        cols = df_x.columns
-
-        ## Transform the data
-        df_x_scaled = pd.DataFrame(scaler.fit_transform(df_x), columns=cols)
-        estimator = RandomForestClassifier(random_state=SEED)  # Set the random state for RandomForestClassifier
-        selector = RFE(estimator)
-        selector.fit(df_x_scaled, df_y)
-
-        df_x_scaled = selector.transform(df_x_scaled)
-
-        feature_map = zip(selector.get_support(), df_x.columns)
-        selected_features = [v for i, v in feature_map if i]
-
-        logging.info(f"selected_features: {selected_features}")
-
-        # Save selected features to a pickle file
-        selected_features_path = prob_config.selected_features
-        with open(selected_features_path, 'wb') as f:
-            pickle.dump(selected_features, f)
-        # Train model
-        # Define models
-        models = {
-            'XGBoost Classifier': XGBClassifier(eval_metric="logloss", random_state=SEED),
-            'LightGBM Classifier': LGBMClassifier(random_state=SEED)
-        }
-        evaluator = ModelEvaluator(models, df_x_scaled, df_y)
-        output_file = prob_config.score_model
-        # Write the scores to the output file
-        evaluator.print_scores(output_file)
-        return selected_features
+        ##print("df_x.isna().sum().sum()", df_x.isna().sum())
+        #print(df_x.shape)
+        #scaler = StandardScaler()
+        #cols = df_x.columns
+#
+        ### Transform the data
+        #df_x_scaled = pd.DataFrame(scaler.fit_transform(df_x), columns=cols)
+        #estimator = RandomForestClassifier(random_state=SEED)  # Set the random state for RandomForestClassifier
+        #selector = RFE(estimator)
+        #selector.fit(df_x_scaled, df_y)
+#
+        #df_x_scaled = selector.transform(df_x_scaled)
+#
+        #feature_map = zip(selector.get_support(), df_x.columns)
+        #selected_features = [v for i, v in feature_map if i]
+#
+        #logging.info(f"selected_features: {selected_features}")
+#
+        ## Save selected features to a pickle file
+        #selected_features_path = prob_config.selected_features
+        #with open(selected_features_path, 'wb') as f:
+        #    pickle.dump(selected_features, f)
+        ## Train model
+        ## Define models
+        #models = {
+        #    'XGBoost Classifier': XGBClassifier(eval_metric="logloss", random_state=SEED),
+        #    'LightGBM Classifier': LGBMClassifier(random_state=SEED)
+        #}
+        #evaluator = ModelEvaluator(models, df_x_scaled, df_y)
+        #output_file = prob_config.score_model
+        ## Write the scores to the output file
+        #evaluator.print_scores(output_file)
+        #return selected_features
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

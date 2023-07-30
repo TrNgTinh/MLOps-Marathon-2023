@@ -12,13 +12,20 @@ from sklearn.preprocessing import LabelEncoder
 from problem_config import ProblemConfig, ProblemConst, get_prob_config
 from utils import save_label_encoder, load_label_encoder
 
+from collections import Counter
+
 class LabelEncoderExt(LabelEncoder):
     def fit(self, data):
-        self.classes_ = np.append(np.unique(data), 'Unknown')
+        self.classes_ = np.unique(data)
+        # Lưu giữ giá trị xuất hiện nhiều nhất trong tập huấn luyện
+        label_counts = Counter(self.classes_)
+        self.most_common_label = label_counts.most_common(1)[0][0]
+        print("self.most_common_label", self.most_common_label)
         return self
 
     def transform(self, data):
-        new_data = np.where(np.isin(data, self.classes_), data, 'Unknown')
+        # Gán nhãn mới không có trong tập lớp đã khớp thành giá trị mode
+        new_data = np.where(np.isin(data, self.classes_), data, self.most_common_label)
         return super().transform(new_data)
 
 def load_model(model_path):
@@ -45,7 +52,6 @@ class RawDataProcessor:
                 le = load_label_encoder(prob_config.label_encoder / name_file_save)
                 df[col] = le.fit_transform(df[col])    
             else:
-                print(col)
                 name_file_save = "OH_" + str(col) + ".pkl"
                 onehot_encoder = load_label_encoder(prob_config.label_encoder / name_file_save)
                 encoded_col = onehot_encoder.transform(df[[col]])
@@ -71,10 +77,16 @@ class RawDataProcessor:
         for col, model in model_dict.items():
             if col.startswith("LE_"):
                 col_name = col[3:]  # Remove the 'LE_' prefix
+                df[col_name] = df[col_name].replace('null', model.most_common_label)
                 if col_name in df.columns:
                     df[col_name] = model.transform(df[col_name])
             elif col.startswith("OH_"):
                 col_name = col[3:]  # Remove the 'OH_' prefix
+
+                mode_value = df[col_name].mode().iloc[0]
+                df[col_name] = df[col_name].replace('null', mode_value)
+                df[col_name].fillna(mode_value, inplace=True)
+
                 if col_name in df.columns:
                     encoded_col = model.transform(df[[col_name]])
                     col_names = [col_name + '_' + str(i) for i in range(encoded_col.shape[1])]

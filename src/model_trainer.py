@@ -6,6 +6,8 @@ import numpy as np
 import xgboost as xgb
 from mlflow.models.signature import infer_signature
 from sklearn.metrics import roc_auc_score
+import lightgbm as lgb
+
 
 from problem_config import (
     ProblemConfig,
@@ -45,10 +47,10 @@ class ModelTrainer:
 
         # train model
         if len(np.unique(train_y)) == 2:
-            objective = "binary:logistic"
+            objective = "binary"
         else:
-            objective = "multi:softprob"
-        model = xgb.XGBClassifier(objective=objective, **model_params, verbosity=2)
+            objective = "softmax"
+        model = lgb.LGBMClassifier(objective=objective, **model_params)
 
         mlflow.log_metric("train_data_rows", train_x.shape[0])
 
