@@ -17,6 +17,7 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import make_scorer, precision_score, recall_score
 from sklearn.metrics import confusion_matrix, classification_report, f1_score
 import warnings
+import joblib
 
 warnings.filterwarnings('ignore')
 logging.basicConfig(level=logging.INFO)
@@ -99,10 +100,12 @@ class StaticRawData:
         df_x = training_data.drop("label", axis=1)
         df_y = training_data['label']
 
-        if set(df_y.unique()) != {0, 1}:
+        if set(pd.Series(df_y).unique()) != {0, 1}:
             # No need to perform label encoding
             label_encoder = LabelEncoder()
+            print("pd.Series(df_y).unique()", pd.Series(df_y).unique())
             df_y = label_encoder.fit_transform(df_y)
+            joblib.dump(label_encoder, prob_config.label_encoder / 'multi_class.pkl')
 
         print(df_x.shape)
         # Encode the selected columns
@@ -127,32 +130,37 @@ class StaticRawData:
                 name_file_save = "OH_" + str(col) + ".pkl"
                 save_label_encoder(onehot_encoder, prob_config.label_encoder / name_file_save )
                 
-        ##print("df_x.isna().sum().sum()", df_x.isna().sum())
-        #print(df_x.shape)
-        #scaler = StandardScaler()
-        #cols = df_x.columns
-#
-        ### Transform the data
-        #df_x_scaled = pd.DataFrame(scaler.fit_transform(df_x), columns=cols)
-        #estimator = RandomForestClassifier(random_state=SEED)  # Set the random state for RandomForestClassifier
-        #selector = RFE(estimator)
-        #selector.fit(df_x_scaled, df_y)
-#
-        #df_x_scaled = selector.transform(df_x_scaled)
-#
-        #feature_map = zip(selector.get_support(), df_x.columns)
-        #selected_features = [v for i, v in feature_map if i]
-#
-        #logging.info(f"selected_features: {selected_features}")
-#
-        ## Save selected features to a pickle file
-        #selected_features_path = prob_config.selected_features
-        #with open(selected_features_path, 'wb') as f:
-        #    pickle.dump(selected_features, f)
-        ## Train model
-        ## Define models
+        #print("df_x.isna().sum().sum()", df_x.isna().sum())
+        print(df_x.shape)
+        scaler = StandardScaler()
+        cols = df_x.columns
+
+        ## Transform the data
+        df_x_scaled = pd.DataFrame(scaler.fit_transform(df_x), columns=cols)
+        estimator = RandomForestClassifier(random_state=SEED)  # Set the random state for RandomForestClassifier
+        selector = RFE(estimator)
+        selector.fit(df_x_scaled, df_y)
+
+        df_x_scaled = selector.transform(df_x_scaled)
+
+        feature_map = zip(selector.get_support(), df_x.columns)
+        selected_features = [v for i, v in feature_map if i]
+        
+        logging.info(f"selected_features: {selected_features}")
+        # Kiểm tra và xoá feature3 khỏi danh sách selected_features (nếu nó có trong đó)
+        if 'feature3' in selected_features:
+            selected_features.remove('feature3')
+
+        logging.info(f"selected_features: {selected_features}")
+        
+
+        # Save selected features to a pickle file
+        selected_features_path = prob_config.selected_features
+        with open(selected_features_path, 'wb') as f:
+            pickle.dump(selected_features, f)
+        # Train model
+        # Define models
         #models = {
-        #    'XGBoost Classifier': XGBClassifier(eval_metric="logloss", random_state=SEED),
         #    'LightGBM Classifier': LGBMClassifier(random_state=SEED)
         #}
         #evaluator = ModelEvaluator(models, df_x_scaled, df_y)

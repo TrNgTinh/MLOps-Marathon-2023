@@ -7,6 +7,7 @@ import xgboost as xgb
 from mlflow.models.signature import infer_signature
 from sklearn.metrics import roc_auc_score
 import lightgbm as lgb
+import joblib
 
 
 from problem_config import (
@@ -82,6 +83,7 @@ class ModelTrainer:
             signature=signature,
         )
         mlflow.end_run()
+        joblib.dump(model,'model_prob_2.pkl')
         logging.info("finish train_model")
 
 

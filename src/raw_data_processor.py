@@ -15,12 +15,15 @@ from utils import save_label_encoder, load_label_encoder
 from collections import Counter
 
 class LabelEncoderExt(LabelEncoder):
+    def __init__(self):
+        super().__init__()
+        self.most_common_label = None
+
     def fit(self, data):
         self.classes_ = np.unique(data)
         # Lưu giữ giá trị xuất hiện nhiều nhất trong tập huấn luyện
         label_counts = Counter(self.classes_)
         self.most_common_label = label_counts.most_common(1)[0][0]
-        print("self.most_common_label", self.most_common_label)
         return self
 
     def transform(self, data):
@@ -73,26 +76,30 @@ class RawDataProcessor:
         return model_dict
 
     @staticmethod
+    def fill_missing_with_mode(df):
+        for column in df.columns:
+            mode_value = df[column].mode()[0]  # Lấy mode của cột
+            df[column].fillna(mode_value, inplace=True)
+        return df
+
+    @staticmethod
     def preprocess_categorical_columns(df, model_dict):
         for col, model in model_dict.items():
-            if col.startswith("LE_"):
-                col_name = col[3:]  # Remove the 'LE_' prefix
-                df[col_name] = df[col_name].replace('null', model.most_common_label)
-                if col_name in df.columns:
+            col_name = col[3:] 
+            if col_name in df.columns:
+                if col.startswith("LE_"):
+                    df[col_name] = df[col_name].replace('null', model.most_common_label)
                     df[col_name] = model.transform(df[col_name])
-            elif col.startswith("OH_"):
-                col_name = col[3:]  # Remove the 'OH_' prefix
-
-                mode_value = df[col_name].mode().iloc[0]
-                df[col_name] = df[col_name].replace('null', mode_value)
-                df[col_name].fillna(mode_value, inplace=True)
-
-                if col_name in df.columns:
-                    encoded_col = model.transform(df[[col_name]])
-                    col_names = [col_name + '_' + str(i) for i in range(encoded_col.shape[1])]
-                    df_encoded = pd.DataFrame(encoded_col, columns=col_names)
-                    df = pd.concat([df, df_encoded], axis=1)
-                    df.drop(columns=[col_name], inplace=True)
+                elif col.startswith("OH_"):
+                    mode_value = df[col_name].mode().iloc[0]
+                    df[col_name] = df[col_name].replace('null', np.nan)
+                    df[col_name].fillna(mode_value, inplace=True)
+                    if col_name in df.columns:
+                        encoded_col = model.transform(df[[col_name]])
+                        col_names = [col_name + '_' + str(i) for i in range(encoded_col.shape[1])]
+                        df_encoded = pd.DataFrame(encoded_col, columns=col_names)
+                        df = pd.concat([df, df_encoded], axis=1)
+                        df.drop(columns=[col_name], inplace=True)
         return df
 
     @staticmethod
@@ -145,7 +152,7 @@ class RawDataProcessor:
         )
 
         selected_features = RawDataProcessor.load_selected_features(prob_config)
-
+        print("selected_features",selected_features )
         if set(training_data['label'].unique()) != {0, 1}:
             # No need to perform label encoding
             label_encoder = LabelEncoder()

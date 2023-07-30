@@ -84,6 +84,10 @@ def create_prob_config(phase_id: str, prob_id: str) -> ProblemConfig:
         prob_config.train_data_path
     )
 
+    prob_config.log_file = (
+        prob_config.train_data_path / "api_logs.log"
+    )
+
     prob_config.train_x_path = prob_config.train_data_path / "train_x.parquet"
     prob_config.train_y_path = prob_config.train_data_path / "train_y.parquet"
     prob_config.test_x_path = prob_config.train_data_path / "test_x.parquet"

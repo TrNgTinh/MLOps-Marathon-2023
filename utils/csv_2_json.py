@@ -59,13 +59,13 @@ def convert_all_parquet_files_to_json(input_dir, num_lines, output_dir):
 
 if __name__ == "__main__":
     # Input directory containing Parquet files
-    input_parquet_dir = "/home/ubuntu/MLOps-Marathon-2023/data/captured_data/phase-2/prob-2"
+    input_parquet_dir = "/home/ubuntu/MLOps-Marathon-2023/data/captured_data/phase-2/prob-1"
 
     # Number of lines to convert to JSON for each file
     num_lines_to_convert = 50
 
     # Output directory for JSON files
-    output_json_dir = "/home/ubuntu/MLOps-Marathon-2023/data/curl/phase-2/prob-2"
+    output_json_dir = "/home/ubuntu/MLOps-Marathon-2023/data/curl/phase-2/prob-1"
 
     # Call the function to convert all Parquet files to JSON
     convert_all_parquet_files_to_json(input_parquet_dir, num_lines_to_convert, output_json_dir)
