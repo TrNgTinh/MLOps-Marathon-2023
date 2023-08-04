@@ -10,17 +10,35 @@ This repository is the sample solution for MLOps Marathon 2023.
     # Install python 3.9
     # Install docker version 20.10.17
     # Install docker-compose version v2.6.1
+    
+    # Here are some steps on how to set up Conda Environment, Docker, and Docker-compose in Linux. If you have already installed them, you can ignore this.
+
+    wget https://repo.anaconda.com/miniconda/Miniconda3-py39_23.5.2-0-Linux-x86_64.sh
+    bash Miniconda3-py39_23.5.2-0-Linux-x86_64.sh
+    conda create -n myenv python=3.9
+    conda activate myenv
+    sudo apt update
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sudo sh get-docker.sh
+    sudo usermod -aG docker ubuntu
+    sudo apt-get install docker-compose-plugin
+    sudo usermod -aG docker ubuntu
+    sudo chmod 666 /var/run/docker.sock
+    cat /etc/group | grep docker
+
+    # Pip instaal Requirements
     pip install -r requirements.txt
     make mlflow_up
     ```
 
 2.  Train model
 
-    -   Download data, `./data/raw_data` dir should look like. Link Download Data https://drive.google.com/drive/folders/1C4uMfeCq2fxYlebuJxm54LD2eDTn-Xk3?usp=sharing
+    -   Download data, `./data/raw_data` dir should look like. Link Download Data https://drive.google.com/drive/folders/1c0ThOCB_nO_jjuZa_bLghy65HfzMbiXh
 
         ```bash
         data/raw_data
         ├── .gitkeep
+        ├── phase-2
         └── phase-3
             └── prob-1
                 ├── features_config.json
@@ -28,12 +46,16 @@ This repository is the sample solution for MLOps Marathon 2023.
         ```
 
     -   Static data  
+
+        This script runs the select_features function to select the best features of the data. The output of the function is saved to the file data/train_data/phase-id/prob-id/selected_features.pickle. Additionally, the script also trains some models for encoding categorical data and saves the base score of a LightGBM model to the file score.txt.
+
         ```bash
         python src/static_data.py --phase-id phase-3 --prob-id prob-1
         ```
     
     -   Process data
-
+        
+        
         ```bash
         python src/raw_data_processor.py --phase-id phase-3 --prob-id prob-1
         ```
@@ -80,13 +102,11 @@ This repository is the sample solution for MLOps Marathon 2023.
 
         python src/model_predictor.py --model1-config-path data/model_config/phase-3/prob-1/model-1.yaml --model2-config-path data/model_config/phase-3/prob-2/model-1.yaml --port 5040
 
-        ##python src/model_predictor.py --config-path data/model_config/phase-3/prob-1/model-1.yaml --port 8000
-        ##python src/model_predictor.py --config-path data/model_config/phase-3/prob-2/model-1.yaml --port 8000
 
         # curl in another terminal
-        curl -X POST http://localhost:8000/phase-3/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-3/prob-1/payload-1.json
+        curl -X POST http://localhost:5040/phase-3/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-3/prob-1/payload-1.json
 
-        curl -X POST http://localhost:8000/phase-3/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-3/prob-2/payload-1.json
+        curl -X POST http://localhost:5040/phase-3/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-3/prob-2/payload-1.json
 
         curl -X POST http://localhost:5040/phase-3/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-3/prob-2/payload-1.json
 
@@ -95,14 +115,13 @@ This repository is the sample solution for MLOps Marathon 2023.
         curl -X POST http://localhost:5040/phase-3/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-3/prob-1/payload-0.json
 
 
-        # curl in another machine to aws server
+        # curl in another machine to aws server ( incase using aws server)
 
         curl -X POST http://ec2-13-250-39-138.ap-southeast-1.compute.amazonaws.com:5040/phase-3/prob-1/predict -H "Content-Type: application/json" -d @data/curl/phase-3/prob-1/payload-1.json
 
         curl -X POST http://ec2-54-169-18-28.ap-southeast-1.compute.amazonaws.com:5040/phase-3/prob-2/predict -H "Content-Type: application/json" -d @data/curl/phase-3/prob-2/payload-1.json
 
         
-
 
         # stop the predictor above
         ```
@@ -121,8 +140,8 @@ This repository is the sample solution for MLOps Marathon 2023.
          ├── .gitkeep 
          └── phase-3
              └── prob-1
-                 ├── 123.parquet
-                 └── 456.parquet
+                 ├── {id1}.parquet
+                 └── {id2}.parquet
         ```
 
 4.  Improve model
@@ -141,8 +160,8 @@ This repository is the sample solution for MLOps Marathon 2023.
         ├── .gitkeep
         └── phase-3
             └── prob-1
-                ├── 123.parquet
-                ├── 456.parquet
+                ├── {id1}.parquet
+                ├── {id2}.parquet
                 └── processed
                     ├── captured_x.parquet
                     └── uncertain_y.parquet
