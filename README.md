@@ -22,6 +22,7 @@ This repository is the sample solution for MLOps Marathon 2023.
     sudo sh get-docker.sh
     sudo usermod -aG docker ubuntu
     sudo apt-get install docker-compose-plugin
+    sudo apt install docker-compose
     sudo usermod -aG docker ubuntu
     sudo chmod 666 /var/run/docker.sock
     cat /etc/group | grep docker
